@@ -8,7 +8,7 @@ import (
 
 /**
   Simple REST client demo
- */
+*/
 func main() {
 
 	// URL to invoke
@@ -27,8 +27,8 @@ func main() {
 	client := &http.Client{}
 
 	// Issue request
-	res, err := client.Do(r)
-	//res, err := client.Get(url) // Alternative: Direct issuing of requests, but fewer configuration options
+	//res, err := client.Do(r)
+	res, err := client.Get(url) // Alternative: Direct issuing of requests, but fewer configuration options
 	if err != nil {
 		fmt.Errorf("Error in response:", err.Error())
 	}
