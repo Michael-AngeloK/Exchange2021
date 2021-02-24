@@ -24,7 +24,7 @@ type Currency struct {
 }
 
 func homePage(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hi, paste either of those on the back of the url:\n\n`/exchange/v1/exchangehistory/{country_name}`\n`/exchange/v1/exchangehistory/{country_name}/{begin_date-end_date}`\n`/exchange/v1/exchangehistory/{country_name}/{begin_date-end_date}`")
+	fmt.Fprintf(w, "Hi, paste either of those on the back of the url:\n\n`/exchange/v1/exchangehistory/{country_name}`\n`/exchange/v1/exchangehistory/{country_name}/{begin_date-end_date}`\n`/exchange/v1/exchangeborder/{country_name}`")
 
 	fmt.Println("Endpoint Hit: homePage")
 }
