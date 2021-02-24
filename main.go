@@ -188,17 +188,18 @@ type Rate struct {
 	GBP float64 `json:"GBP,omitempty"`
 	KRW float64 `json:"KRW,omitempty"`
 	MYR float64 `json:"MYR,omitempty"`
+	EUR float64 `json:"EUR,omitempty"`
 }
 
 type Final struct {
 	Rate []Data `json:"rates"`
-	Base string `json:"base"`
 }
 
 type Data struct {
 	Name     string `json:"name"`
 	Currency string `json:"currency"`
 	Rate     Rate   `json:"rate"`
+	Base     string `json:"base"`
 }
 
 func exchangeBorder(w http.ResponseWriter, r *http.Request) {
@@ -220,76 +221,82 @@ func exchangeBorder(w http.ResponseWriter, r *http.Request) {
 	var responseObject []Response
 	json.Unmarshal(responseData, &responseObject)
 
-	Borders := ""
+	var data []Data
+	var base string
 
 	for i := 0; i < len(responseObject[0].Border); i++ {
-		Borders += responseObject[0].Border[i]
-		if (i + 1) == len(responseObject[0].Border) {
-		} else {
-			Borders += ";"
+		Borders := responseObject[0].Border[i]
+
+		url1 := "https://restcountries.eu/rest/v2/alpha?codes=" + Borders
+
+		responseCountry, err := http.Get(url1)
+		if err != nil {
+			fmt.Print(err.Error())
+			os.Exit(1)
 		}
+
+		responseDataCountry, err := ioutil.ReadAll(responseCountry.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		var responseObjectCountry []Response
+		json.Unmarshal(responseDataCountry, &responseObjectCountry)
+		////////////////////////////////////////////////////////////////////
+
+		url2 := "https://api.exchangeratesapi.io/latest?symbols=" + responseObjectCountry[0].Currencies[0].Code
+		if responseObjectCountry[0].Currencies[0].Code == responseObject[0].Currencies[0].Code {
+			if responseObjectCountry[0].Currencies[0].Code == "EUR" {
+				url2 += "&base=USD"
+				base = "USD"
+			} else {
+				url2 += "&base=EUR"
+				base = "EUR"
+			}
+		} else {
+			url2 += "&base=" + responseObject[0].Currencies[0].Code
+			base = responseObject[0].Currencies[0].Code
+		}
+
+		responseExchange, err := http.Get(url2)
+		if err != nil {
+			fmt.Print(err.Error())
+			os.Exit(1)
+		}
+
+		responseDataExchange, err := ioutil.ReadAll(responseExchange.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		var responseObjectExchange ExchangeData
+		json.Unmarshal(responseDataExchange, &responseObjectExchange)
+
+		responseObjectCountry[0].Exchange = responseObjectExchange
+
+		//////////////////////////////////////////////////////////////////
+
+		//fmt.Fprintf(w, responseObjectCountry)
+		data = append(data, Data{Name: responseObjectCountry[0].Country, Currency: responseObjectCountry[0].Currencies[0].Code, Rate: responseObjectCountry[0].Exchange.Rates, Base: base})
+
+		//fmt.Println(url2, responseObjectCountry)
+		//w.Header().Set("Content-Type", "application/json")
+
+		//json.NewEncoder(w).Encode(responseObjectExchange)
 	}
 
-	url1 := "https://restcountries.eu/rest/v2/alpha?codes=" + Borders
-
-	//fmt.Println(url1)
-
-	response1, err := http.Get(url1)
-	if err != nil {
-		fmt.Print(err.Error())
-		os.Exit(1)
-	}
-
-	defer response1.Body.Close()
-	//bodyBytes, _ := ioutil.ReadAll(response1.Body)
-
-	//bodyString := json.RawMessage(bodyBytes)
-
-	url2 := "https://api.exchangeratesapi.io/latest?symbols=" + responseObject[0].Currencies[0].Code
-	//url1 := "https://api.exchangeratesapi.io/history?start_at=2018-01-01&end_at=2018-09-01&symbols=ILS,JPY"
-
-	response2, err := http.Get(url2)
-	if err != nil {
-		fmt.Print(err.Error())
-		os.Exit(1)
-	}
-
-	responseData2, err := ioutil.ReadAll(response2.Body)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	var responseObject2 ExchangeData
-	json.Unmarshal(responseData2, &responseObject2)
-
-	responseObject[0].Exchange = responseObject2
-
-	//fmt.Println(responseData1)
-	//fmt.Println(len(responseObject.Borders))
-	//fmt.Println(responseObject1)
-	//fmt.Fprintf(w, string(responseData1))
-	//delim := ""
-	//fmt.Fprintf(w, string((strings.Trim(strings.Join(strings.Fields(fmt.Sprint(responseObject[0].Currencies)), delim), "[]"))))
-	//fmt.Fprintf(w, string(responseData1))
-	//for i := 0; i < len(responseObject[0].Border); i++ {
-	//	fmt.Fprintln(w, responseObject[0].Border[i])
-	//}
-
-	var data []Data
-
-	data = append(data, Data{Name: responseObject[0].Country, Currency: responseObject[0].Currencies[0].Code, Rate: responseObject[0].Exchange.Rates})
-	data = append(data, Data{Name: responseObject[0].Country, Currency: responseObject[0].Currencies[0].Code, Rate: responseObject[0].Exchange.Rates})
-
-	final := Final{Rate: data, Base: responseObject[0].Exchange.Base}
+	//final := Final{Rate: data, Base: responseObject[0].Exchange.Base}
 
 	w.Header().Set("Content-Type", "application/json")
 
 	//json.NewEncoder(w).Encode(responseData2)
 	//json.NewEncoder(w).Encode(responseObject)
 	//json.NewEncoder(w).Encode(data)
-	json.NewEncoder(w).Encode(final)
+	//json.NewEncoder(w).Encode(final)
 	//json.NewEncoder(w).Encode(string(responseData1))
 	//json.NewEncoder(w).Encode(bodyString)
+	//json.NewEncoder(w).Encode(responseObject[0])
+	json.NewEncoder(w).Encode(data)
 }
 
 func handleRequests() {
