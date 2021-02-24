@@ -3,64 +3,66 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/gorilla/mux"
 )
 
-type Article struct {
-	Title   string `json:"Title"`
-	Desc    string `json:"Desc"`
-	Content string `json:"Content"`
+// A Response struct to map the Entire Response
+type Response struct {
+	Country string   `json:"name"`
+	Border  []string `json:"borders"`
 }
 
-type Articles []Article
+func homePage(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Hello Prog2005, Here we go")
 
-func AllArticles(rw http.ResponseWriter, r *http.Request) {
-	articles := Articles{
-		Article{Title: "Article 1 2", Desc: "Description 1", Content: " Content 1"},
-		Article{Title: "Article 2", Desc: "Description 2", Content: " Content 2"},
-		Article{Title: "Article 3", Desc: "Description 3", Content: " Content 3"},
+	fmt.Println("Endpoint Hit: homePage")
+}
+
+func pokemonGo(w http.ResponseWriter, r *http.Request) {
+	response, err := http.Get("https://restcountries.eu/rest/v2/name/norway")
+	if err != nil {
+		fmt.Print(err.Error())
+		os.Exit(1)
 	}
-	fmt.Println("Endpoint Hint: All Articles Endpoint")
 
-	rw.Header().Set("Content-Type", "application/json")
+	responseData, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	json.NewEncoder(rw).Encode(articles)
+	var responseObject []Response
+	json.Unmarshal(responseData, &responseObject)
+
+	//fmt.Println(responseData)
+	//fmt.Println(len(responseObject.Borders))
+	fmt.Println(responseObject)
+	fmt.Fprintf(w, string(responseData))
+	for i := 0; i < len(responseObject[0].Border); i++ {
+		fmt.Println(responseObject[0].Border[i])
+	}
 }
 
-func homePage(rw http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(rw, "Hello Prog2005, Here we go")
-}
+func handleRequests() {
+	myRouter := mux.NewRouter().StrictSlash(true)
 
-func exchangeHistory() {
-}
-
-func exchangeBorder() {
-}
-
-func diag() {
-}
-
-func handelRequests() {
-	/// We have two endpoints, for the main root, like localhost:4747, it runs homepage function and for localhost:4747/articles it executes AllArticles function
-	http.HandleFunc("/", homePage)
-	http.HandleFunc("/articles", AllArticles)
-	//http.HandleFunc("/exchange/v1/exchangehistory", exchangeHistory)
-	//http.HandleFunc("/exchange/v1/exchangeborder", exchangeBorder)
-	//http.HandleFunc("/exchange/v1/diag", diag)
-	log.Fatal(http.ListenAndServe(getport(), nil))
+	myRouter.HandleFunc("/", homePage).Methods("GET")
+	myRouter.HandleFunc("/bob", pokemonGo).Methods("GET")
+	log.Fatal(http.ListenAndServe(getport(), myRouter))
 }
 
 func main() {
-	handelRequests()
+	handleRequests()
 }
 
-//// Get Port if it is set by environment, else use a defined one like "4747"
 func getport() string {
 	var port = os.Getenv("PORT")
 	if port == "" {
-		port = "4747"
+		port = "8080"
 	}
 	return ":" + port
 }
