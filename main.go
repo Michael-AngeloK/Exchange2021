@@ -1,5 +1,6 @@
 package main
 
+// IMPORTS
 import (
 	"encoding/json"
 	"fmt"
@@ -11,18 +12,24 @@ import (
 	"github.com/gorilla/mux"
 )
 
+/* Many of the structs are for compensating the data
+ * structure of the json data from their corresponding RESTful API's
+ **/
+
 // A Response struct to restcountries
 type Response struct {
 	Country    string       `json:"name"`
 	Currencies []Currency   `json:"currencies"`
 	Border     []string     `json:"borders"`
-	Exchange   ExchangeData `json:exchangedata`
+	Exchange   ExchangeData `json:"exchangedata"`
 }
 
+// Currency struct
 type Currency struct {
 	Code string `json:"code"`
 }
 
+// ExchangeData struct
 type ExchangeData struct {
 	Rates Rate   `json:"rates"`
 	Name  string `json:"name"`
@@ -30,6 +37,7 @@ type ExchangeData struct {
 	Date  string `json:"date"`
 }
 
+// Rate struct
 type Rate struct {
 	CAD float64 `json:"CAD,omitempty"`
 	HKD float64 `json:"HKD,omitempty"`
@@ -66,12 +74,18 @@ type Rate struct {
 	EUR float64 `json:"EUR,omitempty"`
 }
 
+/* Homepage
+ * This end point will greet you and instruct the reader to go to the different end points
+ **/
 func homePage(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Hi, paste either of those on the back of the url and replace the curly brackets with the according label:\n\n`/exchange/v1/exchangehistory/{country_name}`\n`/exchange/v1/exchangehistory/{country_name}/{begin_date-end_date}`\n`/exchange/v1/exchangeborder/{country_name}`\n`/exchange/v1/diag`")
 
 	fmt.Println("Endpoint Hit: homePage")
 }
 
+/* ExchangeHistory
+ * This end point will output all the data of the country, the reader chose in the url, straight from the service
+ **/
 func exchangeHistory(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
@@ -92,7 +106,6 @@ func exchangeHistory(w http.ResponseWriter, r *http.Request) {
 	json.Unmarshal(responseData, &responseObject)
 
 	url1 := "https://api.exchangeratesapi.io/latest?symbols=" + responseObject[0].Currencies[0].Code
-	//url1 := "https://api.exchangeratesapi.io/history?start_at=2018-01-01&end_at=2018-09-01&symbols=ILS,JPY"
 	if responseObject[0].Currencies[0].Code == "EUR" {
 		url1 += "&base=USD"
 	}
@@ -114,6 +127,9 @@ func exchangeHistory(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Endpoint Hit: ExchangeHistory")
 }
 
+/* ExchangeHistoryDates
+ * This end point is the same as the end point above, but in addition will include begin and end dates
+ **/
 func exchangeHistoryDates(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
@@ -161,6 +177,7 @@ func exchangeHistoryDates(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Endpoint Hit: ExchangeHistoryDates")
 }
 
+// Data struct
 type Data struct {
 	Name     string `json:"name"`
 	Currency string `json:"currency"`
@@ -168,10 +185,14 @@ type Data struct {
 	Base     string `json:"base"`
 }
 
+// Final struct
 type Final struct {
 	Rate []Data `json:"rates"`
 }
 
+/* ExchangeBorder
+ * This end point will output all exchangerates from the neighbor country around
+ **/
 func exchangeBorder(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
@@ -212,6 +233,7 @@ func exchangeBorder(w http.ResponseWriter, r *http.Request) {
 
 		var responseObjectCountry []Response
 		json.Unmarshal(responseDataCountry, &responseObjectCountry)
+
 		////////////////////////////////////////////////////////////////////
 
 		url2 := "https://api.exchangeratesapi.io/latest?symbols=" + responseObjectCountry[0].Currencies[0].Code
@@ -256,6 +278,7 @@ func exchangeBorder(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Endpoint Hit: ExchangeBorder")
 }
 
+// Diagnostic struct
 type Diagnostic struct {
 	ExchangeRateAPI int    `json:"exchangerateapi"`
 	RestCountries   int    `json:"restcountries"`
@@ -263,6 +286,9 @@ type Diagnostic struct {
 	Uptime          string `json:"uptime"`
 }
 
+/* Diagnostic
+ * This end point will output the status code from the required RESTful API's
+ **/
 func diagnostics(w http.ResponseWriter, r *http.Request) {
 
 	responseEx, err := http.Get("https://api.exchangeratesapi.io")
