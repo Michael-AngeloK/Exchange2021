@@ -110,6 +110,8 @@ func exchangeHistory(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	json.NewEncoder(w).Encode(bodyString)
+
+	fmt.Println("Endpoint Hit: ExchangeHistory")
 }
 
 func exchangeHistoryDates(w http.ResponseWriter, r *http.Request) {
@@ -155,6 +157,8 @@ func exchangeHistoryDates(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	json.NewEncoder(w).Encode(bodyString)
+
+	fmt.Println("Endpoint Hit: ExchangeHistoryDates")
 }
 
 type Data struct {
@@ -246,7 +250,10 @@ func exchangeBorder(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+
 	json.NewEncoder(w).Encode(data)
+
+	fmt.Println("Endpoint Hit: ExchangeBorder")
 }
 
 type Diagnostic struct {
@@ -275,6 +282,8 @@ func diagnostics(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	json.NewEncoder(w).Encode(diagnostic)
+
+	fmt.Println("Endpoint Hit: Diagnostics")
 }
 
 func handleRequests() {
