@@ -299,6 +299,34 @@ func exchangeBorder(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(data)
 }
 
+type Diagnostic struct {
+	ExchangeRateAPI int    `json:"exchangerateapi"`
+	RestCountries   int    `json:"restcountries"`
+	Version         string `json:"version"`
+	Uptime          string `json:"uptime"`
+}
+
+func diagnostics(w http.ResponseWriter, r *http.Request) {
+
+	responseEx, err := http.Get("https://api.exchangeratesapi.io")
+	if err != nil {
+		fmt.Print(err.Error())
+		os.Exit(1)
+	}
+
+	responseCount, err := http.Get("https://api.exchangeratesapi.io")
+	if err != nil {
+		fmt.Print(err.Error())
+		os.Exit(1)
+	}
+
+	diagnostic := Diagnostic{ExchangeRateAPI: responseEx.StatusCode, RestCountries: responseCount.StatusCode, Version: "v1"}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	json.NewEncoder(w).Encode(diagnostic)
+}
+
 func handleRequests() {
 	myRouter := mux.NewRouter().StrictSlash(true)
 
@@ -306,6 +334,7 @@ func handleRequests() {
 	myRouter.HandleFunc("/exchange/v1/exchangehistory/{country_name}", exchangeHistory).Methods("GET")
 	myRouter.HandleFunc("/exchange/v1/exchangehistory/{country_name}/{begin_date-end_date}", exchangeHistoryDates).Methods("GET")
 	myRouter.HandleFunc("/exchange/v1/exchangeborder/{country_name}", exchangeBorder).Methods("GET")
+	myRouter.HandleFunc("/exchange/v1/diag", diagnostics).Methods("GET")
 	log.Fatal(http.ListenAndServe(getport(), myRouter))
 }
 
