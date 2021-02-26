@@ -8,6 +8,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
 )
@@ -72,6 +74,10 @@ type Rate struct {
 	KRW float64 `json:"KRW,omitempty"`
 	MYR float64 `json:"MYR,omitempty"`
 	EUR float64 `json:"EUR,omitempty"`
+}
+
+func init() {
+	startTime = time.Now()
 }
 
 /* Homepage
@@ -286,11 +292,27 @@ type Diagnostic struct {
 	Uptime          string `json:"uptime"`
 }
 
+var startTime time.Time
+
+func uptime() time.Duration {
+	return time.Since(startTime)
+}
+
+func shortDur(d time.Duration) string {
+	s := d.String()
+	if strings.HasSuffix(s, "m0s") {
+		s = s[:len(s)-2]
+	}
+	if strings.HasSuffix(s, "h0m") {
+		s = s[:len(s)-2]
+	}
+	return s
+}
+
 /* Diagnostic
  * This end point will output the status code from the required RESTful API's
  **/
 func diagnostics(w http.ResponseWriter, r *http.Request) {
-
 	responseEx, err := http.Get("https://api.exchangeratesapi.io")
 	if err != nil {
 		fmt.Print(err.Error())
@@ -303,7 +325,7 @@ func diagnostics(w http.ResponseWriter, r *http.Request) {
 		os.Exit(1)
 	}
 
-	diagnostic := Diagnostic{ExchangeRateAPI: responseEx.StatusCode, RestCountries: responseCount.StatusCode, Version: "v1"}
+	diagnostic := Diagnostic{ExchangeRateAPI: responseEx.StatusCode, RestCountries: responseCount.StatusCode, Version: "v1", Uptime: shortDur(uptime())}
 
 	w.Header().Set("Content-Type", "application/json")
 
@@ -321,6 +343,7 @@ func handleRequests() {
 	myRouter.HandleFunc("/exchange/v1/exchangeborder/{country_name}", exchangeBorder).Methods("GET")
 	myRouter.HandleFunc("/exchange/v1/diag", diagnostics).Methods("GET")
 	log.Fatal(http.ListenAndServe(getport(), myRouter))
+
 }
 
 func main() {
