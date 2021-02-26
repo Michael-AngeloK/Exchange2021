@@ -76,6 +76,15 @@ type Rate struct {
 	EUR float64 `json:"EUR,omitempty"`
 }
 
+// Diagnostic struct
+type Diagnostic struct {
+	ExchangeRateAPI int    `json:"exchangerateapi"`
+	RestCountries   int    `json:"restcountries"`
+	Version         string `json:"version"`
+	Uptime          string `json:"uptime"`
+}
+
+// Start Time
 func init() {
 	startTime = time.Now()
 }
@@ -282,14 +291,6 @@ func exchangeBorder(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(data)
 
 	fmt.Println("Endpoint Hit: ExchangeBorder")
-}
-
-// Diagnostic struct
-type Diagnostic struct {
-	ExchangeRateAPI int    `json:"exchangerateapi"`
-	RestCountries   int    `json:"restcountries"`
-	Version         string `json:"version"`
-	Uptime          string `json:"uptime"`
 }
 
 var startTime time.Time
